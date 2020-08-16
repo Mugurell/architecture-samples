@@ -30,11 +30,6 @@ import timber.log.Timber.DebugTree
  */
 @HiltAndroidApp
 class TodoApplication : Application() {
-
-    // Depends on the flavor,
-    val taskRepository: TasksRepository
-        get() = ServiceLocator.provideTasksRepository(this)
-
     override fun onCreate() {
         super.onCreate()
         if (BuildConfig.DEBUG) Timber.plant(DebugTree())
