@@ -19,7 +19,6 @@ package com.example.android.architecture.blueprints.todoapp.tasks
 import android.content.Context
 import android.os.Bundle
 import android.view.View
-import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.recyclerview.widget.RecyclerView
@@ -38,24 +37,27 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.example.android.architecture.blueprints.todoapp.R
-import com.example.android.architecture.blueprints.todoapp.ServiceLocator
 import com.example.android.architecture.blueprints.todoapp.data.Task
-import com.example.android.architecture.blueprints.todoapp.data.source.FakeRepository
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksRepository
+import com.example.android.architecture.blueprints.todoapp.di.modules.TasksModules
+import com.example.android.architecture.blueprints.todoapp.launchFragmentInHiltContainer
 import com.example.android.architecture.blueprints.todoapp.util.saveTaskBlocking
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.Matcher
 import org.hamcrest.core.IsNot.not
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.robolectric.annotation.LooperMode
 import org.robolectric.annotation.TextLayoutMode
+import javax.inject.Inject
 
 /**
  * Integration test for the Task List screen.
@@ -66,19 +68,19 @@ import org.robolectric.annotation.TextLayoutMode
 @LooperMode(LooperMode.Mode.PAUSED)
 @TextLayoutMode(TextLayoutMode.Mode.REALISTIC)
 @ExperimentalCoroutinesApi
+@UninstallModules(TasksModules.TasksRepositoryModule::class)
+@HiltAndroidTest
 class TasksFragmentTest {
 
-    private lateinit var repository: TasksRepository
+    @get:Rule
+    var hiltRule = HiltAndroidRule(this)
+
+    @Inject
+    lateinit var repository: TasksRepository
 
     @Before
-    fun initRepository() {
-        repository = FakeRepository()
-        ServiceLocator.tasksRepository = repository
-    }
-
-    @After
-    fun cleanupDb() = runBlockingTest {
-        ServiceLocator.resetRepository()
+    fun setup() {
+        hiltRule.inject()
     }
 
     @Test
@@ -313,10 +315,9 @@ class TasksFragmentTest {
     @Test
     fun clickAddTaskButton_navigateToAddEditFragment() {
         // GIVEN - On the home screen
-        val scenario = launchFragmentInContainer<TasksFragment>(Bundle(), R.style.AppTheme)
         val navController = mock(NavController::class.java)
-        scenario.onFragment {
-            Navigation.setViewNavController(it.view!!, navController)
+        launchFragmentInHiltContainer<TasksFragment>(Bundle(), R.style.AppTheme) {
+            Navigation.setViewNavController(view!!, navController)
         }
 
         // WHEN - Click on the "+" button

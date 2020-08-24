@@ -15,7 +15,6 @@
  */
 package com.example.android.architecture.blueprints.todoapp.taskdetail
 
-import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isChecked
@@ -25,18 +24,21 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.example.android.architecture.blueprints.todoapp.R
-import com.example.android.architecture.blueprints.todoapp.ServiceLocator
 import com.example.android.architecture.blueprints.todoapp.data.Task
-import com.example.android.architecture.blueprints.todoapp.data.source.FakeRepository
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksRepository
+import com.example.android.architecture.blueprints.todoapp.di.modules.TasksModules
+import com.example.android.architecture.blueprints.todoapp.launchFragmentInHiltContainer
 import com.example.android.architecture.blueprints.todoapp.util.saveTaskBlocking
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.core.IsNot.not
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import javax.inject.Inject
 
 /**
  * Integration test for the Task Details screen.
@@ -44,19 +46,19 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
+@UninstallModules(TasksModules.TasksRepositoryModule::class)
+@HiltAndroidTest
 class TaskDetailFragmentTest {
 
-    private lateinit var repository: TasksRepository
+    @get:Rule
+    var hiltRule = HiltAndroidRule(this)
+
+    @Inject
+    lateinit var repository: TasksRepository
 
     @Before
-    fun initRepository() {
-        repository = FakeRepository()
-        ServiceLocator.tasksRepository = repository
-    }
-
-    @After
-    fun cleanupDb() = runBlockingTest {
-        ServiceLocator.resetRepository()
+    fun setup() {
+        hiltRule.inject()
     }
 
     @Test
@@ -67,7 +69,7 @@ class TaskDetailFragmentTest {
 
         // WHEN - Details fragment launched to display task
         val bundle = TaskDetailFragmentArgs(activeTask.id).toBundle()
-        launchFragmentInContainer<TaskDetailFragment>(bundle, R.style.AppTheme)
+        launchFragmentInHiltContainer<TaskDetailFragment>(bundle, R.style.AppTheme)
 
         // THEN - Task details are displayed on the screen
         // make sure that the title/description are both shown and correct
@@ -88,7 +90,7 @@ class TaskDetailFragmentTest {
 
         // WHEN - Details fragment launched to display task
         val bundle = TaskDetailFragmentArgs(completedTask.id).toBundle()
-        launchFragmentInContainer<TaskDetailFragment>(bundle, R.style.AppTheme)
+        launchFragmentInHiltContainer<TaskDetailFragment>(bundle, R.style.AppTheme)
 
         // THEN - Task details are displayed on the screen
         // make sure that the title/description are both shown and correct

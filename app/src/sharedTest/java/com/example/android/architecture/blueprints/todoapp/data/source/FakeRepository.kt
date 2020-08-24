@@ -25,11 +25,14 @@ import com.example.android.architecture.blueprints.todoapp.data.Result.Success
 import com.example.android.architecture.blueprints.todoapp.data.Task
 import kotlinx.coroutines.runBlocking
 import java.util.LinkedHashMap
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Implementation of a remote data source with static access to the data for easy testing.
  */
-class FakeRepository : TasksRepository {
+@Singleton
+class FakeRepository @Inject constructor(): TasksRepository {
 
     var tasksServiceData: LinkedHashMap<String, Task> = LinkedHashMap()
 

@@ -17,10 +17,8 @@ package com.example.android.architecture.blueprints.todoapp.statistics
 
 import android.content.Context
 import android.os.Bundle
-import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -28,19 +26,20 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.example.android.architecture.blueprints.todoapp.R
-import com.example.android.architecture.blueprints.todoapp.ServiceLocator
 import com.example.android.architecture.blueprints.todoapp.data.Task
-import com.example.android.architecture.blueprints.todoapp.data.source.FakeRepository
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksRepository
-import com.example.android.architecture.blueprints.todoapp.util.DataBindingIdlingResource
-import com.example.android.architecture.blueprints.todoapp.util.monitorFragment
+import com.example.android.architecture.blueprints.todoapp.di.modules.TasksModules
+import com.example.android.architecture.blueprints.todoapp.launchFragmentInHiltContainer
 import com.example.android.architecture.blueprints.todoapp.util.saveTaskBlocking
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import javax.inject.Inject
 
 /**
  * Integration test for the statistics screen.
@@ -48,38 +47,18 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 @ExperimentalCoroutinesApi
+@UninstallModules(TasksModules.TasksRepositoryModule::class)
+@HiltAndroidTest
 class StatisticsFragmentTest {
-    private lateinit var repository: TasksRepository
+    @get:Rule
+    var hiltRule = HiltAndroidRule(this)
 
-    // An Idling Resource that waits for Data Binding to have no pending bindings
-    private val dataBindingIdlingResource = DataBindingIdlingResource()
+    @Inject
+    lateinit var repository: TasksRepository
 
     @Before
-    fun initRepository() {
-        repository = FakeRepository()
-        ServiceLocator.tasksRepository = repository
-    }
-
-    @After
-    fun cleanupDb() = runBlockingTest {
-        ServiceLocator.resetRepository()
-    }
-
-    /**
-     * Idling resources tell Espresso that the app is idle or busy. This is needed when operations
-     * are not scheduled in the main Looper (for example when executed on a different thread).
-     */
-    @Before
-    fun registerIdlingResource() {
-        IdlingRegistry.getInstance().register(dataBindingIdlingResource)
-    }
-
-    /**
-     * Unregister your Idling Resource so it can be garbage collected and does not leak any memory.
-     */
-    @After
-    fun unregisterIdlingResource() {
-        IdlingRegistry.getInstance().unregister(dataBindingIdlingResource)
+    fun setup() {
+        hiltRule.inject()
     }
 
     @Test
@@ -90,8 +69,7 @@ class StatisticsFragmentTest {
             saveTaskBlocking(Task("Title2", "Description2", true))
         }
 
-        val scenario = launchFragmentInContainer<StatisticsFragment>(Bundle(), R.style.AppTheme)
-        dataBindingIdlingResource.monitorFragment(scenario)
+        launchFragmentInHiltContainer<StatisticsFragment>(Bundle(), R.style.AppTheme)
 
         val expectedActiveTaskText = getApplicationContext<Context>()
             .getString(R.string.statistics_active_tasks, 50.0f)
